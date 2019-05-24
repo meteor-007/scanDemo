@@ -18,7 +18,7 @@ public class testJDBCContext {
 
     public static void main(String[] args) throws Exception {
 
-        String url = "jdbc:mysql://172.19.1.29:3306/test";
+        String url = "jdbc:mysql://172.19.1.29:3306/aas_vs";
         String driver = "com.mysql.jdbc.Driver";
         String user = "root";
         String password = "Ankki_mySQL123";
@@ -54,10 +54,12 @@ public class testJDBCContext {
         Long begin = System.currentTimeMillis();
         System.out.println("开始时间:" + begin);
         // sql前缀
-        StringBuilder prefix = new StringBuilder("INSERT INTO public_dictionary(db_type,cipher_text,wp_way,clear_dictionary_id) VALUES ");
+        StringBuilder prefix = new StringBuilder("INSERT INTO public_dictionary(db_type,cipher_text,clear_dictionary_id,wp_way) VALUES ");
+
+//        StringBuilder prefix = new StringBuilder("INSERT INTO clear_dictionary(dic_library_id,clear_text) VALUES ");
         InputStreamReader inputReader = null;
         BufferedReader bufferReader = null;
-        InputStream inputStream = new FileInputStream("D:\\数据库漏洞扫描\\数据库漏洞扫描\\弱口令字典\\dictionary.txt");
+        InputStream inputStream = new FileInputStream("D:\\gbase.txt");
         inputReader = new InputStreamReader(inputStream, "utf8");
         bufferReader = new BufferedReader(inputReader);
         // 读取一行
@@ -77,7 +79,7 @@ public class testJDBCContext {
             int index = 0;
             while ((line = bufferReader.readLine()) != null) {
                 index++;
-                prefix.append("(4,");
+                prefix.append("(9,");
 //                line = line.replace("\\", "\\\\").replace("*", "\\*")
 //                        .replace("+", "\\+").replace("|", "\\|")
 //                        .replace("{", "\\{").replace("}", "\\}")
@@ -88,11 +90,10 @@ public class testJDBCContext {
 //                        .replace(".", "\\.").replace("&", "\\&")
 //                        .replace("'", "\\\\\'").replace("\"", "\\\\\"");
                 //ps.setString(3, line);
-//                prefix.append("\"" + line + "\",");
-                try {
-                    String cipherText = TestPassword.mysql(line);
+//                prefix.append("\"" + line + "\"),");
+                //                    String cipherText = TestPassword.mysql(line);
 //                    String cipherText = TestPassword.pgsql(line);
-                    cipherText = cipherText.replace("\\", "\\\\").replace("*", "\\*")
+                line = line.replace("\\", "\\\\").replace("*", "\\*")
                             .replace("+", "\\+").replace("|", "\\|")
                             .replace("{", "\\{").replace("}", "\\}")
                             .replace("(", "\\(").replace(")", "\\)")
@@ -100,17 +101,15 @@ public class testJDBCContext {
                             .replace("[", "\\[").replace("]", "\\]")
                             .replace("?", "\\?").replace(",", "\\,")
                             .replace(".", "\\.").replace("&", "\\&")
-                            .replace("'", "\\\\\'").replace("\"", "\\\\\"");
-                    prefix.append("\"*" + cipherText + "\",0,"+index+"),");
-
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
+                            .replace("'", "\\'").replace("\"", "\\\"");
+                    prefix.append("'" + line + "',"+ index + ",1),");
+//                prefix.append("\'" + line + "\'),");
                 if (index % 10000 ==0) {
                     String sql = prefix.toString();
                     sql = sql.substring(0, sql.length() - 1);
                     st.executeUpdate(sql);
-                    prefix = new StringBuilder("INSERT INTO public_dictionary(db_type,cipher_text,wp_way,clear_dictionary_id) VALUES ");
+                    prefix = new StringBuilder("INSERT INTO public_dictionary(db_type,cipher_text,clear_dictionary_id,wp_way) VALUES ");
+//                    prefix = new StringBuilder("INSERT INTO clear_dictionary(dic_library_id,clear_text) VALUES ");
                 }
                 //suffix = new StringBuffer();
                 //strBuffer.append(str);
@@ -140,7 +139,7 @@ public class testJDBCContext {
             String sql = prefix.toString();
             sql = sql.substring(0, sql.length() - 1);
             st.executeUpdate(sql);
-            //ps.close();
+//            ps.close();
             st.close();
             conn.close();
             bufferReader.close();

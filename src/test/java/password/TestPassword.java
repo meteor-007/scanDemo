@@ -1,7 +1,9 @@
 package password;
 
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -10,6 +12,9 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -48,7 +53,7 @@ public class TestPassword {
          * 5.7版本以上 return "select user, plugin,authentication_string from mysql.user where user != '' and user!='mysql.sys'"
          * 5.7以下  return "select user, password from mysql.user where user != ''";
          */
-        mysql("Ceshi123"); // 测试mysql密码加密-SHA1
+        mysql("!"); // 测试mysql密码加密-SHA1
         /*
          * 2,oracle数据库查询用户与加密的密码
          *  PASSWORD为DES加密保存的密码
@@ -62,8 +67,8 @@ public class TestPassword {
          *       SELECT name,password,spare4 FROM sys.user$
          *      如果PASSWORD字段没有值或者长度不等于16则采用sha1方式
          */
-//        oracleDES("system", ",52");// 测试oracle密码DES加密
-//        oracleSHA1("system", "Ceshi123");// 测试oracle密码SHA1加密
+//        oracleDES("system", "Ceshi123");// 测试oracle密码DES加密
+        oracleSHA1("system", "Ceshi123");// 测试oracle密码SHA1加密
         /*
          * 3,sqlserver支持2000 2005 2008版本的密码匹配
          * 2000：select x.name,master.dbo.fn_varbintohexstr(x.password) as password_hash from
@@ -73,13 +78,17 @@ public class TestPassword {
          * 2012,2014,2017: select name,password_hash, is_disabled from sys.sql_logins where name is not null
          *  需要连数据库调用方法返回匹配结果
          */
-        sqlserver("2000", "Ceshi123");// 测试sqlserver2000密码
-        sqlserver("2005", "Ceshi123");// 测试sqlserver2005密码
-        sqlserver("2008", "Ceshi123");// 测试sqlserver2008密码
-        sqlserver("2012", "Ceshi123");// 测试sqlserver2012密码
-        sqlserver("2014", "Ceshi123");// 测试sqlserver2014密码
-        sqlserver("2016", "Ceshi123");// 测试sqlserver2016密码
-        sqlserver("2017", "Ceshi123");// 测试sqlserver2017密码
+//        sqlserver("2000", "ankki123");// 测试sqlserver2000密码
+//        sqlserver("2000", "ANKKI123");// 测试sqlserver2005密码
+//        testSqlServer2005Or2008("Ceshi123");
+//        testSqlServer2012Or2014();
+//        sqlserver("2008", "Ceshi123");// 测试sqlserver2008密码
+//        sqlserver("2012", "Ceshi123");// 测试sqlserver2012密码
+//        sqlserver("2014", "Ceshi123");// 测试sqlserver2014密码
+//        sqlserver("2016", "Ceshi123");// 测试sqlserver2016密码
+//        sqlserver("2017", "Ceshi123");// 测试sqlserver2017密码
+//        testSqlServer2012Or2014();
+//        testSqlServer2000("Ceshi123");
         /*
          * 4,postgresql数据库查询用户与加密的密码 如果密码字段不是以md5开头则密码没有加密的版本
          * SELECT usename,passwd, valuntil FROM pg_shadow
@@ -103,7 +112,7 @@ public class TestPassword {
          * where timestamp = (select max(timestamp) from sys_catalog.sys_pwdht
          * where username = t.username)
          */
-//        kingbase("root", "Ceshi123");//暂无环境测试
+//        kingbase("SYSTEM", "Ceshi123");//暂无环境测试
         /*
          * 8,南大通用数据库
          * String var1 =
@@ -115,13 +124,13 @@ public class TestPassword {
          * var2.replace("%SystemSchema%", var5.getString(1)); var5 =
          * this.b.createStatement().executeQuery(var2);
          */
-        gbase("Ceshi123");//暂无环境测试
+//        gbase("Ceshi123");//暂无环境测试
         /**
          * Todo:
          * @Author:$czwei
          * @Date: 2018/12/26 10:25
          */
-        db2();//11.1.3版本-8.2版本
+//        db2();//11.1.3版本-8.2版本
     }
 
     /**
@@ -286,12 +295,13 @@ public class TestPassword {
      */
     public static String sysbase(String pwd)
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        String pwdjiami = "c0077852792bd3e354ac68ff7472459d0f76260074c4b7e0ec1c4f21dd4c224adbb9a71fa4621eabd452";// 十六进制
+        // 十六进制
+        String pwdjiami = "c0077852792bd3e354ac68ff7472459d0f76260074c4b7e0ec1c4f21dd4c224adbb9a71fa4621eabd452";
         // 两位代表一个字符，前2到10位为变值第11位开始时有效密码加密即从68ff74....
         byte[] jiamiByte = initSysbaseJiami(pwdjiami);
-//        System.out.println("sysbase-加密原始:" + new String(jiamiByte));
+        System.out.println("sysbase-加密原始:" + new String(jiamiByte));
         byte[] key = initKey(pwdjiami);
-        byte[] pwdbyte = pwd.getBytes("UTF-16BE");
+        byte[] pwdbyte = pwd.getBytes(StandardCharsets.UTF_16BE);
         byte[] arrayOfByte = new byte[518];
         for (int i = 0; i < 510; i++) {
             if (i < pwdbyte.length) {
@@ -304,7 +314,7 @@ public class TestPassword {
             arrayOfByte[j + 510] = key[j];
         }
         byte[] pwdafter = jiami("SHA-256", arrayOfByte);
-//        System.out.println("sysbase-SHA-256加密后:" + new String(pwdafter));
+        System.out.println("sysbase-SHA-256加密后:" + new String(pwdafter));
 
         String rs = byteToString(pwdafter);
         return rs;
@@ -395,7 +405,7 @@ public class TestPassword {
     private static void sqlserver(String version, String pwd)
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
         if ("2012".equals(version) || "2014".equals(version)) {
-            testSqlServer2012Or2014(pwd);
+//            testSqlServer2012Or2014(pwd);
         } else if ("2000".equals(version)) {
             testSqlServer2000(pwd);
         } else if ("2016".equals(version)) {
@@ -414,14 +424,19 @@ public class TestPassword {
      */
     public static String testSqlServer2000(String pwd)
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        String pwdjiami = "0x0100b360d03cd9916d5e4ba68c6889d338ec24807a18f2ed39d9d9916d5e4ba68c6889d338ec24807a18f2ed39d9";
+//        String pwdjiami = "0x0100b360d03cd9916d5e4ba68c6889d338ec24807a18f2ed39d9d9916d5e4ba68c6889d338ec24807a18f2ed39d9";
+//        String pwdjiami = "0x01004e6576605ebad2be331a15028c01912bedf2e4c528dff2b983cfd455a4008b8b1046eb6180383c2479963535";
+//        String pwdjiami = "0100B3382E17944260ADEF936899C43C0FCDD571E70BBBC1E1F8";// 2005-ab
+        String pwdjiami = "01008231DA1DE5F19A83243916269168E13572D0DB33FA3954D0";// 2005-ankki123
+
+
         String str1 = pwdjiami.replaceAll("\\-", "");
         int a = (str1.length() - 14) / 2;
         byte[] b = pwdjiamiToByte(str1.substring(14, a + 14));
 //        System.out.println("sqlserver2000-加密原始:" + new String(b));
         String str2 = pwdjiami.replaceAll("\\-", "").substring(6, 14);
         byte[] jiamiafter = sqlserverjiami(str2, pwd);
-//        System.out.println("sqlserver2000-加密后:" + new String(jiamiafter));
+        System.out.println("sqlserver2000-加密后:" + new String(jiamiafter));
         String rs = byteToString(jiamiafter);
         return rs;
     }
@@ -435,15 +450,18 @@ public class TestPassword {
      */
     public static String testSqlServer2005Or2008(String pwd)
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        // String pwdjiami =
-        // "01004086CEB628AA51DD7E821560D52C6A6B5DC187421C6E8057";//2005 123456
-        String pwdjiami = "010056049B0EEC4467EE48EEA24126BA0AB59DBD26BBC19CA6CB";// 2008
-        // 123456789
+        //01004086CEB616CB813DA6870A6FCD0CF43F3B1D5D40713A8A31
+        //String pwdjiami = "01004086CEB628AA51DD7E821560D52C6A6B5DC187421C6E8057";// 2005-123456
+//        String pwdjiami = "01004086CEB616CB813DA6870A6FCD0CF43F3B1D5D40713A8A31";// 2005-Ceshi123
+//        String pwdjiami = "01002067528F7E0D7D502E9678961065E62E9C708F2D06431FE1";// 2005-123
+        //String pwdjiami = "010090E8E3F4D8AA0839481B0FB677146DF8745721BB5C53A718";// 2005-user12006
+        String pwdjiami = "01008231DA1DE5F19A83243916269168E13572D0DB33FA3954D0";// 2005-ankki123
+
         byte[] a = pwdjiamiToByte(pwdjiami.replaceAll("\\-", "").substring(12));
-//        System.out.println("sqlserver2005-加密原始:" + new String(a));
+        System.out.println("sqlserver2005-加密原始:" + new String(a));
         String str1 = pwdjiami.replaceAll("\\-", "").substring(4, 12);
         byte[] jiamiafter = sqlserverjiami(str1, pwd);
-//        System.out.println("sqlserver2005-加密后:" + new String(jiamiafter));
+        System.out.println("sqlserver2005-加密后:" + new String(jiamiafter));
         String rs = byteToString(jiamiafter);
         return rs;
     }
@@ -476,7 +494,7 @@ public class TestPassword {
      */
     private static byte[] sqlserverjiami(String str2, String pwd)
             throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] pwdByte = pwd.getBytes("UTF-16LE");
+        byte[] pwdByte = pwd.getBytes("gb2312");
         byte[] var4 = pwdjiamiToByte(str2);
         byte[] var2 = new byte[pwdByte.length + var4.length];
         System.arraycopy(pwdByte, 0, var2, 0, pwdByte.length);
@@ -487,31 +505,89 @@ public class TestPassword {
     /**
      * sqlserver2012和2014加密验证 找出与传入值密码相同的用户
      *
-     * @param pwd
-     * @throws UnsupportedEncodingException
-     * @throws NoSuchAlgorithmException
      */
-    private static void testSqlServer2012Or2014(String pwd) {
+    private static void testSqlServer2012Or2014() {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            Class.forName("com.microsoft.jdbc.sqlserver.SQLServerDriver");
-            String url = "jdbc:microsoft:sqlserver://172.19.1.237:62012;DatabaseName=master";
-//            String url = "jdbc:microsoft:sqlserver://172.19.1.237:62014;DatabaseName=master";
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+            String url = "jdbc:sqlserver://172.19.1.143:52008;DatabaseName=master";
+            //[{password_hash=01004086CEB616CB813DA6870A6FCD0CF43F3B1D5D40713A8A31, is_disabled=0, name=sa},
+            // {password_hash=010090E8E3F4D8AA0839481B0FB677146DF8745721BB5C53A718, is_disabled=0, name=user1},
+            // {password_hash=01006153ADF5BE638F0326FA7CCAD7549ED11FFFADF53865703B, is_disabled=0, name=user2},
+            // {password_hash=01002E54302170E84C192AADEA3509F248A765FCC48DCFCB2439, is_disabled=0, name=qwertyuioplkjhgfdsazxcvbnm},
+            // {password_hash=01009EC3ECB3BC286270F822E339B2BF1185C028FCE151C78249, is_disabled=0, name=ankki123},
+            // {password_hash=01004C383B3835404F00466AAFA303A3002E6DFF15FBFE46D5F1, is_disabled=0, name=ankki},
+            // {password_hash=0100B3382E17944260ADEF936899C43C0FCDD571E70BBBC1E1F8, is_disabled=0, name=user3},
+            // {password_hash=01002067528F7E0D7D502E9678961065E62E9C708F2D06431FE1, is_disabled=0, name=user4},
+            // {password_hash=01001012013451B24C9B7065E02EB7504241737DF1EC3674D205, is_disabled=0, name=user5},
+            // {password_hash=01004AB6E8288F4C43338EF7934E8434C81D63BCA6BD93D7103C, is_disabled=0, name=user6}]
+
+
+
+            //[{password_hash=01004086CEB616CB813DA6870A6FCD0CF43F3B1D5D40713A8A31, is_disabled=0, name=sa}]
+//            String url = "jdbc:sqlserver://172.19.1.143:52005;DatabaseName=master";
+
+            //[{password_hash=010056049B0EF702BE8D5F2BD4301BD5AD2C9B0F6A815B5A9A3A, is_disabled=0, name=sa},
+            // {password_hash=01003869D680ADF63DB291C6737F1EFB8E4A481B02284215913F, is_disabled=1, name=##MS_PolicyEventProcessingLogin##},
+            // {password_hash=01008D22A249DF5EF3B79ED321563A1DCCDC9CFC5FF954DD2D0F, is_disabled=1, name=##MS_PolicyTsqlExecutionLogin##}]
+//            String url = "jdbc:sqlserver://172.19.1.143:52008;DatabaseName=master";
+
+            //[{password_hash=02009C2CB99952B3BBA4BC90F10B05351362731E6734F8204B01B79BD3D4FFAE05357789A73E121767B8FEFF8360087AE828965B0AA20E22C25FAB323B4DB983203EC6CE765C, is_disabled=0, name=sa},
+            // {password_hash=0200E74DDACE488B93BE3B3330D10586BEE0EB0940F6B6B3964983BBFB272B809C41E3B666200F28A1942DC0B3FA7339BFF90E51F9AA90F5F627778612117DD336A01194FE7C, is_disabled=1, name=##MS_PolicyTsqlExecutionLogin##},
+            // {password_hash=0200BD9BD73C23BC2DDA205F2E60139818B2E54CFB35A13B3FAC951534EE00E2D65F602F90614BBE3AC55B8E8EFF96E06C1F91634D1A9394373EFA1D2A99EC53E828A6A949E6, is_disabled=1, name=##MS_PolicyEventProcessingLogin##}]
+//            String url = "jdbc:sqlserver://172.19.1.143:52012;DatabaseName=master";
+
+            //[{password_hash=0200814097FD737E549BD6BC53C0DFA1752C0BC9EECDFC1F6CE31850AFEA228F2E87E2A167D035277F2254111FD971E8D70C49CF120966E3EEFAFF03264297E2A3D960BB49CF, is_disabled=0, name=sa},
+            // {password_hash=020079DBCEB15B9ADBC4DA3001D913553D80619CAD943124AC60A54AA052C9393D6F23427476AE26BDE1DC6526BB4BCFFB3A971C612F3C387BF49020F6CD042C09EE57C5D7A7, is_disabled=1, name=##MS_PolicyTsqlExecutionLogin##},
+            // {password_hash=0200207FC1F14CE24636801865AE59F6492CFBF54D0022F66B3DE0AB7508F3BC2FAC3A57416EE1E47DEF0319A00968547BB58804E27B5B1072BAAF64DBC566C54067A78149C1, is_disabled=1, name=##MS_PolicyEventProcessingLogin##}]
+//            String url = "jdbc:sqlserver://172.19.1.143:52014;DatabaseName=master";
+
+            //[{password_hash=0200BFBA17FC4B30CCACCE9C74BAD0B378E6D4D4F7A8A6433231B4B3865D02A7C14F46D0AF41BD1D31141B2C4995DD7E62D8AFE39176F54EBD6885BB0CEC9F04D657A2D7F6A9, is_disabled=0, name=sa},
+            // {password_hash=02007AFFDC72C3D805177EB0E558BD43A6C730FB8ECCFE1990C9D04FCDF8EF724C5C37D75EE4E28BED03011F9459A985E8AA6F82E8867FEAAFBDFCFEABCCB96FD506ABFF2CDD, is_disabled=1, name=##MS_PolicyEventProcessingLogin##},
+            // {password_hash=0200F9858D861A868979200C6F51F7E1F33A8A69FDC192F7949F37ACBA1E619CB9BB8280AE759245984C34254369737D5C782F1D8511A614ED7B484A0CB1D484C5076F673A08, is_disabled=1, name=##MS_PolicyTsqlExecutionLogin##}]
+//            String url = "jdbc:sqlserver://172.19.1.143:52016;DatabaseName=master";
+
+            //[{password_hash=0200A3AF98D97D623F2BE065FD692308B9BB454B64DD543F0A61FF8962562CC17333784B60B413E363BE8C41C6199A5C10B8ADD47E8669A3474E5F8257CF6984511E55CDC467, is_disabled=0, name=sa},
+            // {password_hash=0200B332BC3F194D01C00D9E40AD0E216B798AF28D0B1ADC8887E4F43FB6CEB0E580F7C474A09381C084C38A838F20565E3EC732ED044F820438742C3D40883A39A2D53C6A18, is_disabled=1, name=##MS_PolicyEventProcessingLogin##},
+            // {password_hash=0200BF0D92009DBD8A986EFF8EFB9231F9BD9E308D4CB7FD4AC269E932EA91BC7D30DFBF768F1A2E87F81C8D68E8C84D4E0A35E4193E2825BE096D1B13499286CDE4D5F18B44, is_disabled=1, name=##MS_PolicyTsqlExecutionLogin##}]
+//            String url = "jdbc:sqlserver://172.19.1.143:52017;DatabaseName=master";
+
+
+            //[{password_hash=0200303EA0B42AC26FCFB5DC48AF61BDF14CF1079427996B5EC7545C860ED58EB614F77F1DEF6216DE36434E3D35E84F666477279CF5203A6316B53D12F50FED464CC32A7B03, name=sa},
+            // {password_hash=0200D2DBB5C34924986D03470F3DAA88E2411C0647AF9B5D628539F4CB8781613F5A69578B6279197A2F4924626948E9EAD551C9529BDC7A5D041CB2492774473A5F7DAC1536, name=##MS_PolicyEventProcessingLogin##}, {password_hash=020026FB3E989CE465663A0CE3C975DE3D97C89BD6CFA9E74646EF265E03E7275DDD8D182E71B9394B98DC4C2170F945C8CE16445444277C9BA9E0FCDC7634CE1B65E908C1D7, name=##MS_PolicyTsqlExecutionLogin##},
+            // \{password_hash=020058E79E9E3FCBC5E95897F1F9C8D90F65DAD620C6633A4A15F336657EF5DAB5122FB52CCA255F61AC5174F53271B372D2F5BDBD70D70A384628C980A74A84D6C9E5D044BA, name=test}]
+//            String url = "jdbc:sqlserver://172.19.1.211:1433;DatabaseName=master";
             //mydb为数据库
             String user = "sa";
             String password = "Ceshi123";
             conn = DriverManager.getConnection(url, user, password);
             // 内置密码比较方法
-            String sql = "SELECT name FROM sys.sql_logins WHERE PWDCOMPARE(?, password_hash) = 1";
+//            String sql = "SELECT name FROM sys.sql_logins WHERE PWDCOMPARE(?, password_hash) = 1";
+//            String sql = "select x.name,master.dbo.fn_varbintohexstr(x.password) as password_hash from\n" +
+//                    " master.dbo.syslogins s, master.dbo.sysxlogins x where s.isntgroup = 0\n" +
+//                    "  and s.isntuser = 0 and x.name = s.name";
+//            String sql = "select name,password_hash, is_disabled from sys.sql_logins where name is not null";
+
+            String sql = "select name,password_hash, is_disabled from sys.sql_logins where name is not null";
             // 返回密码为pwd的用户名
             ps = conn.prepareStatement(sql);
-            ps.setString(1, pwd);
+//            ps.setString(1, pwd);
             rs = ps.executeQuery();
+            List<Map<String, Object>> list = new ArrayList<>();
             while (rs.next()) {
-                System.out.println(rs.getString("name") + ":" + pwd);
+                Map<String, Object> map = new HashMap<>(16);
+                String name = rs.getString("name");
+                String passwords = rs.getString("password_hash");
+                String is_disabled = rs.getString("is_disabled");
+                map.put("name", name);
+                map.put("password_hash", passwords);
+                map.put("is_disabled", is_disabled);
+                list.add(map);
             }
+            System.out.println(list);
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -529,7 +605,7 @@ public class TestPassword {
     public static String oracleSHA1(String name, String pwd)
             throws NoSuchAlgorithmException {
         String spare4 = "S:F87BE4C1463EECA763BCA7497EDDAA988B461764258521A6AA4D5F14D1E5";// S:无用信息,42位之后为随机值
-        byte[] a = pwdjiamiToByte(spare4.substring(2, 42));
+//        byte[] a = pwdjiamiToByte(spare4.substring(2, 42));
 //        System.out.println("oracle-SHA1加密原始" + new String(a));
         String str = spare4.substring(42, spare4.length());// 获得随机值
         byte[] paramString1 = pwd.getBytes();
@@ -610,12 +686,12 @@ public class TestPassword {
      * @throws UnsupportedEncodingException
      */
     public static String mysql(String pwd) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        byte[] b = pwdjiamiToByte("6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9"); // 两次sha1加密
+//        byte[] b = pwdjiamiToByte("6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9"); // 两次sha1加密
 //        byte[] b1 = pwdjiamiToByte("B923AB8476BEB39254BFB1D62D8F5871AB85DC7D");// 5.0
 //        System.out.println("mysql-SHA1加密原始：" + new String(b, "utf-8"));
         byte[] a = jiami("SHA1", pwd.getBytes());//5.0-5.7 SHA1
         byte[] c = jiami("SHA1", a);
-//            System.out.println("mysql-SHA1加密后：" + new String(c, "utf-8"));
+//            System.out.println("mysql-SHA1加密后：" + new String(c, StandardCharsets.UTF_8));
         String rs = byteToString(c);
         return rs;
     }
@@ -633,11 +709,15 @@ public class TestPassword {
             if (v < 0) {
                 v += 256;
             }
+            if (v < 16) {
+                sb.append(Integer.toHexString(0));
+            }
             sb.append(Integer.toHexString(v));
         }
-//        System.out.println(sb.toString().toUpperCase());
-        String rs = sb.toString().toUpperCase();
-        return rs;
+        System.out.println(sb.toString().toLowerCase());
+//        String rs = sb.toString().toUpperCase();
+        String rs = sb.toString().toLowerCase();
+        return  rs;
     }
 
     /**
@@ -650,8 +730,8 @@ public class TestPassword {
         if (paramString == null) {
             return null;
         }
-        int i = paramString.length() % 2;
-        if (i == 1) {
+        int i = paramString.length();
+        if (i % 2 == 1) {
             return null;
         }
         byte[] arrayOfByte = new byte[i /= 2];
@@ -687,4 +767,6 @@ public class TestPassword {
         byte[] b = md.digest();
         return b;
     }
+
+
 }
